@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- ===== 权限声明 =====
+         RECORD_AUDIO: 麦克风录音（核心权限，运行时申请）
+         FOREGROUND_SERVICE: 前台服务（API 28+ 必须声明）
+         FOREGROUND_SERVICE_MICROPHONE: Android 14 (API 34+) 细分前台服务类型
+         POST_NOTIFICATIONS: Android 13 (API 33+) 发通知需要运行时权限
+         RECEIVE_BOOT_COMPLETED: 可选，用于开机自启（当前未实现）
+    -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.SnoringDetection">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:theme="@style/Theme.SnoringDetection">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- 前台服务声明
+             foregroundServiceType="microphone" 是 Android 14 (API 34) 必要属性
+             若在 API < 34 设备上此属性被忽略，向后兼容
+        -->
+        <service
+            android:name=".service.SnoringDetectionService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="microphone" />
+
+    </application>
+
+</manifest>
