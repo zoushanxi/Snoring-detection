@@ -2,6 +2,16 @@
 
 一个基于 Android 的实时鼾声检测 App，使用麦克风音频采集 + 短时能量与频带特征的启发式算法来识别鼾声片段。
 
+## 文档
+
+详细的方案说明书与架构图请查看 **[docs/](./docs/README.md)**：
+
+| 文档 | 链接 |
+|------|------|
+| 方案说明书 | [docs/solution-spec.md](./docs/solution-spec.md) |
+| 运行时序图 | [docs/diagrams/sequence-diagram.md](./docs/diagrams/sequence-diagram.md) |
+| 架构 / 模块图 | [docs/diagrams/architecture-diagram.md](./docs/diagrams/architecture-diagram.md) |
+
 ---
 
 ## 功能特性
