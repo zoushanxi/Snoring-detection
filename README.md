@@ -8,7 +8,10 @@
 
 | 文档 | 链接 |
 |------|------|
-| 方案说明书 | [docs/solution-spec.md](./docs/solution-spec.md) |
+| 文档总索引 | [docs/README.md](./docs/README.md) |
+| 方案说明书 | [docs/project-overview.md](./docs/project-overview.md) |
+| 架构文档 | [docs/architecture.md](./docs/architecture.md) |
+| 测试文档 | [docs/testing.md](./docs/testing.md) |
 | 运行时序图 | [docs/diagrams/sequence-diagram.md](./docs/diagrams/sequence-diagram.md) |
 | 架构 / 模块图 | [docs/diagrams/architecture-diagram.md](./docs/diagrams/architecture-diagram.md) |
 
@@ -19,7 +22,8 @@
 - 🎙 **实时麦克风采集**：使用 `AudioRecord` 采集 16 kHz PCM 音频
 - 🔊 **鼾声检测算法**：基于 RMS 能量阈值 + 低频带（100–500 Hz）能量比，连续帧命中触发事件
 - 🔔 **前台服务**：检测期间保持后台运行，不被系统杀掉
-- 💾 **本地存储**：使用 Room 数据库记录每次鼾声事件（时间戳、持续时长、峰值分贝）
+- 💾 **本地存储**：使用 Room 记录每次鼾声事件（时间戳、持续时长、峰值分贝、音频片段路径）
+- 🎵 **音频保留**：每次有效鼾声事件会生成可回放的 WAV 片段文件
 - 📊 **简洁 UI**：Jetpack Compose 单页面，显示实时分贝、检测状态、今日次数、历史记录
 
 ---

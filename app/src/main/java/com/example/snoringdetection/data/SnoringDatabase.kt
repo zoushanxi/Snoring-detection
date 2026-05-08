@@ -11,7 +11,7 @@ import androidx.room.RoomDatabase
  * 版本号升级时需要提供迁移策略（Migration），或在开发阶段使用
  * [fallbackToDestructiveMigration] 直接重建（会丢失数据，仅限开发期使用）。
  */
-@Database(entities = [SnoringEvent::class], version = 1, exportSchema = false)
+@Database(entities = [SnoringEvent::class], version = 2, exportSchema = false)
 abstract class SnoringDatabase : RoomDatabase() {
 
     abstract fun snoringEventDao(): SnoringEventDao
