@@ -4,9 +4,9 @@ import java.io.File
 import java.io.FileOutputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 /**
  * 将 PCM16 单声道采样写入 WAV 文件。
@@ -23,7 +23,7 @@ class WavFileWriter(
         sampleRate: Int,
         timestampMs: Long
     ): File {
-        val fileName = "snore_${FILE_NAME_FORMAT.format(Date(timestampMs))}.wav"
+        val fileName = "snore_${FILE_NAME_FORMAT.format(Instant.ofEpochMilli(timestampMs))}.wav"
         val file = File(outputDir, fileName)
         FileOutputStream(file).use { output ->
             val wavHeader = buildHeader(
@@ -62,6 +62,7 @@ class WavFileWriter(
     private companion object {
         const val CHANNELS = 1
         const val SHORT_BYTES = 2
-        val FILE_NAME_FORMAT = SimpleDateFormat("yyyyMMdd_HHmmss_SSS", Locale.US)
+        val FILE_NAME_FORMAT: DateTimeFormatter =
+            DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss_SSS").withZone(ZoneId.systemDefault())
     }
 }

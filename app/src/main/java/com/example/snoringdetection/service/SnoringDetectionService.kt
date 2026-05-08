@@ -8,6 +8,7 @@ import android.app.Service
 import android.content.Intent
 import android.os.Binder
 import android.os.IBinder
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.example.snoringdetection.MainActivity
 import com.example.snoringdetection.R
@@ -52,6 +53,7 @@ class SnoringDetectionService : Service() {
         const val NOTIFICATION_ID = 1001
         const val ACTION_START = "com.example.snoringdetection.START"
         const val ACTION_STOP = "com.example.snoringdetection.STOP"
+        private const val PRE_ROLL_SECONDS = 2
     }
 
     // ---- Binder（用于 Activity 绑定） ----
@@ -133,7 +135,7 @@ class SnoringDetectionService : Service() {
         detectionJob = serviceScope.launch {
             val preRollFrames = ArrayDeque<ShortArray>()
             var preRollSamples = 0
-            val maxPreRollSamples = audioCapture.sampleRate * 2
+            val maxPreRollSamples = audioCapture.sampleRate * PRE_ROLL_SECONDS
 
             var collectingClip = false
             var clipSamples = ArrayList<Short>()
@@ -147,7 +149,7 @@ class SnoringDetectionService : Service() {
                 if (result.isSnoringFrame) {
                     if (!collectingClip) {
                         collectingClip = true
-                        clipSamples = ArrayList<Short>(maxPreRollSamples + pcmFrame.size * 16)
+                        clipSamples = ArrayList()
                         preRollFrames.forEach { pre -> pre.forEach { clipSamples.add(it) } }
                     }
                     pcmFrame.forEach { clipSamples.add(it) }
@@ -159,14 +161,17 @@ class SnoringDetectionService : Service() {
                 // 若检测到完整鼾声事件，持久化到数据库
                 result.newEvent?.let { snoreEvent ->
                     val clipPath = if (collectingClip && clipSamples.isNotEmpty()) {
-                        wavFileWriter.writeClip(
-                            samples = clipSamples.toShortArray(),
-                            sampleRate = audioCapture.sampleRate,
-                            timestampMs = snoreEvent.timestampMs
-                        ).absolutePath
-                    } else {
-                        null
-                    }
+                        try {
+                            wavFileWriter.writeClip(
+                                samples = clipSamples.toShortArray(),
+                                sampleRate = audioCapture.sampleRate,
+                                timestampMs = snoreEvent.timestampMs
+                            ).absolutePath
+                        } catch (t: Throwable) {
+                            Log.e("SnoringDetectionService", "Failed to write snore clip", t)
+                            null
+                        }
+                    } else null
 
                     repository.insertEvent(
                         SnoringEvent(
@@ -177,7 +182,6 @@ class SnoringDetectionService : Service() {
                         )
                     )
                     collectingClip = false
-                    clipSamples = arrayListOf()
                 }
 
                 preRollFrames.addLast(pcmFrame)

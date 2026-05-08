@@ -27,7 +27,5 @@
 ## 本地执行
 
 ```bash
-./gradlew test
+./gradlew testDebugUnitTest
 ```
-
-> 说明：当前沙箱环境无法解析 `dl.google.com`，导致 Android Gradle Plugin 依赖不可下载，命令在当前环境无法完整执行；建议在可访问 Google Maven 的环境或 CI 中运行。

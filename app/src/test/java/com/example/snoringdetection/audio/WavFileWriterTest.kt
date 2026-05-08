@@ -6,6 +6,7 @@ import org.junit.Test
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.file.Files
+import java.time.Instant
 
 class WavFileWriterTest {
 
@@ -18,7 +19,7 @@ class WavFileWriterTest {
         val file = writer.writeClip(
             samples = samples,
             sampleRate = 16_000,
-            timestampMs = 1_700_000_000_000
+            timestampMs = Instant.parse("2023-11-14T22:13:20Z").toEpochMilli()
         )
 
         assertTrue(file.exists())

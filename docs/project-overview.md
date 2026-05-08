@@ -20,7 +20,7 @@
 ## 3. 检测流程（简述）
 
 1. 服务从 `AudioCapture.audioFrames` 持续读取音频帧；
-2. `SnoringDetector.process()`计算 RMS + 低频能量比；
+2. `SnoringDetector.process()` 计算 RMS + 低频能量比；
 3. 连续命中后进入鼾声状态，结束时产出 `newEvent`；
 4. 服务将事件写入 Room，并将事件对应的 PCM 写为 WAV 文件。
 

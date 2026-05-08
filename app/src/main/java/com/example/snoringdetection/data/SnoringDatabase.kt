@@ -30,7 +30,9 @@ abstract class SnoringDatabase : RoomDatabase() {
                     SnoringDatabase::class.java,
                     "snoring_detection.db"
                 )
-                    .fallbackToDestructiveMigration() // 开发阶段：版本升级时直接重建
+                    // 当前仍处于开发迭代阶段，数据库 schema 变更采用 destructive migration。
+                    // 后续稳定后需替换为显式 Migration，避免用户数据丢失。
+                    .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance
                 instance
