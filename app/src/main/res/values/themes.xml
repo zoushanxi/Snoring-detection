@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- android:Theme.Material.NoActionBar is built-in (API 21+), no extra dependency needed -->
+    <style name="Theme.SnoringDetection" parent="android:Theme.Material.NoActionBar" />
+</resources>
