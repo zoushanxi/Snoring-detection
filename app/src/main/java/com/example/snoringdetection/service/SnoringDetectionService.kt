@@ -8,10 +8,12 @@ import android.app.Service
 import android.content.Intent
 import android.os.Binder
 import android.os.IBinder
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.example.snoringdetection.MainActivity
 import com.example.snoringdetection.R
 import com.example.snoringdetection.audio.AudioCapture
+import com.example.snoringdetection.audio.WavFileWriter
 import com.example.snoringdetection.data.SnoringDatabase
 import com.example.snoringdetection.data.SnoringEvent
 import com.example.snoringdetection.data.SnoringRepository
@@ -25,6 +27,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.util.ArrayDeque
 
 /**
  * 鼾声检测前台服务。
@@ -50,6 +53,7 @@ class SnoringDetectionService : Service() {
         const val NOTIFICATION_ID = 1001
         const val ACTION_START = "com.example.snoringdetection.START"
         const val ACTION_STOP = "com.example.snoringdetection.STOP"
+        private const val PRE_ROLL_SECONDS = 2
     }
 
     // ---- Binder（用于 Activity 绑定） ----
@@ -67,6 +71,7 @@ class SnoringDetectionService : Service() {
     private val audioCapture = AudioCapture()
     private val detector = SnoringDetector()
     private lateinit var repository: SnoringRepository
+    private lateinit var wavFileWriter: WavFileWriter
 
     // ---- 对外可观察状态 ----
     private val _detectionState = MutableStateFlow<DetectionState>(DetectionState.Idle)
@@ -85,6 +90,10 @@ class SnoringDetectionService : Service() {
         createNotificationChannel()
         val db = SnoringDatabase.getInstance(applicationContext)
         repository = SnoringRepository(db.snoringEventDao())
+        wavFileWriter = WavFileWriter(
+            outputDir = applicationContext.getExternalFilesDir("snore_clips")
+                ?: applicationContext.filesDir
+        )
 
         // 订阅今日事件数量更新
         serviceScope.launch {
@@ -124,22 +133,61 @@ class SnoringDetectionService : Service() {
         detector.reset()
 
         detectionJob = serviceScope.launch {
+            val preRollFrames = ArrayDeque<ShortArray>()
+            var preRollSamples = 0
+            val maxPreRollSamples = audioCapture.sampleRate * PRE_ROLL_SECONDS
+
+            var collectingClip = false
+            var clipSamples = ArrayList<Short>()
+
             audioCapture.audioFrames.collect { frame ->
                 val result = detector.process(frame)
                 _latestResult.value = result
+
+                val pcmFrame = frame.toPcm16()
+
+                if (result.isSnoringFrame) {
+                    if (!collectingClip) {
+                        collectingClip = true
+                        clipSamples = ArrayList()
+                        preRollFrames.forEach { pre -> pre.forEach { clipSamples.add(it) } }
+                    }
+                    pcmFrame.forEach { clipSamples.add(it) }
+                }
 
                 // 更新通知（可降低频率以节省资源，这里每帧更新）
                 updateNotification(result)
 
                 // 若检测到完整鼾声事件，持久化到数据库
                 result.newEvent?.let { snoreEvent ->
+                    val clipPath = if (collectingClip && clipSamples.isNotEmpty()) {
+                        try {
+                            wavFileWriter.writeClip(
+                                samples = clipSamples.toShortArray(),
+                                sampleRate = audioCapture.sampleRate,
+                                timestampMs = snoreEvent.timestampMs
+                            ).absolutePath
+                        } catch (t: Throwable) {
+                            Log.e("SnoringDetectionService", "Failed to write snore clip", t)
+                            null
+                        }
+                    } else null
+
                     repository.insertEvent(
                         SnoringEvent(
                             timestampMs = snoreEvent.timestampMs,
                             durationMs = snoreEvent.durationMs,
-                            peakDb = snoreEvent.peakDb
+                            peakDb = snoreEvent.peakDb,
+                            audioFilePath = clipPath
                         )
                     )
+                    collectingClip = false
+                }
+
+                preRollFrames.addLast(pcmFrame)
+                preRollSamples += pcmFrame.size
+                while (preRollSamples > maxPreRollSamples && preRollFrames.isNotEmpty()) {
+                    preRollSamples -= preRollFrames.removeFirst().size
                 }
             }
         }
@@ -205,6 +253,12 @@ class SnoringDetectionService : Service() {
         manager.notify(NOTIFICATION_ID, buildNotification(text))
     }
 }
+
+private fun FloatArray.toPcm16(): ShortArray =
+    ShortArray(size) { idx ->
+        val scaled = (this[idx] * 32767f).toInt()
+        scaled.coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
+    }
 
 /** 服务运行状态。 */
 sealed class DetectionState {

@@ -17,5 +17,6 @@ data class SnoringEvent(
     val id: Long = 0,
     val timestampMs: Long,
     val durationMs: Long,
-    val peakDb: Float
+    val peakDb: Float,
+    val audioFilePath: String? = null
 )
